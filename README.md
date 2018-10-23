@@ -1,2 +1,2 @@
 # myVimConfiguration
-My Vim configuration file.
+Just my Vim configuration file. Em, one file.
