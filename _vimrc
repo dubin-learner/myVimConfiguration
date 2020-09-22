@@ -7,6 +7,7 @@ if has('gui_win32')
   set guifont=Consolas:h12
 else
   set guifont=Monospace\ 12
+  "set guifont=Monaco:h12 --- for MacOS
 endif
 
 set encoding=utf-8
@@ -36,7 +37,19 @@ set guioptions-=T
 
 inoremap ( ()<ESC>i
 inoremap [ []<ESC>i
-inoremap { {}<ESC>i
+"inoremap { {}<ESC>i
 inoremap < <><ESC>i
 inoremap " ""<ESC>i
 inoremap ' ''<ESC>i
+
+"inoremap { {<CR>}<Esc>kA<CR>
+func! HandleCR()
+  let c = col('.') - 1
+  let l = getline('.')
+  if c > 0 && l[c] == '}' && l[c - 1] == '{'
+    return "\r\ekA\r"
+  else
+    return "\r"
+  endif
+endfunc
+inoremap <expr><CR> HandleCR()
