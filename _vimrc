@@ -35,6 +35,11 @@ set shiftwidth=2
 "set guioptions-=m
 set guioptions-=T
 
+set nobackup
+set noundofile
+"set noswapfile
+"set nowritebackup
+
 inoremap ( ()<ESC>i
 inoremap [ []<ESC>i
 "inoremap { {}<ESC>i
