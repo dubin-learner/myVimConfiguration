@@ -32,10 +32,12 @@ Plug '~/.vim/plugged/vim-gitgutter-main'
 Plug '~/.vim/plugged/vim-auto-popmenu-master'
 Plug '~/.vim/plugged/asyncrun.vim-master'
 Plug '~/.vim/plugged/vim-preview-master'
+Plug '~/.fzf/'
+Plug '~/.vim/plugged/fzf.vim-master'
 call plug#end()
 
 " Settings for vim-gitgutter
-let g:gitgutter_enabled=1
+let g:gitgutter_enabled=0
 let g:gitgutter_highlight_lines=1
 let g:gitgutter_sign_added='+'
 
@@ -89,3 +91,8 @@ endfunction
 command -nargs=1 AsyncGrep call AsyncGrep(<q-args>)
 noremap <F5> :cprev<CR>
 noremap <F6> :cnext<CR>
+
+" Jump to the last position when reopen a file
+if has("autocmd")
+  au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+endif
