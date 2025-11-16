@@ -82,7 +82,7 @@ command UpdateTags call UpdateTags()
 map <c-]> g<c-]>
 noremap <F3> :PreviewTag<CR>
 
-" Funciton for compile xtop
+" Funciton for compile
 function! CompileProject()
   let compile_csh = "./compile.sh"  
   if filereadable(compile_csh)
