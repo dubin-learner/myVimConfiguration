@@ -23,17 +23,32 @@ set noundofile
 set noswapfile
 set autoread
 
-" Use Vim-plug to manage plugins
+"" Use Vim-plug to manage plugins (offline)
+"call plug#begin('~/.vim/plugged')
+"Plug '~/.vim/plugged/vim-airline-master'
+"Plug '~/.vim/plugged/nerdtree-master'
+"Plug '~/.vim/plugged/auto-pairs-master'
+"Plug '~/.vim/plugged/vim-gitgutter-main'
+"Plug '~/.vim/plugged/vim-auto-popmenu-master'
+"Plug '~/.vim/plugged/asyncrun.vim-master'
+"Plug '~/.vim/plugged/vim-preview-master'
+"Plug '~/.fzf/'
+"Plug '~/.vim/plugged/fzf.vim-master'
+"call plug#end()
+
+" Use Vim-plug to manage plugins (online)
 call plug#begin('~/.vim/plugged')
-Plug '~/.vim/plugged/vim-airline-master'
-Plug '~/.vim/plugged/nerdtree-master'
-Plug '~/.vim/plugged/auto-pairs-master'
-Plug '~/.vim/plugged/vim-gitgutter-main'
-Plug '~/.vim/plugged/vim-auto-popmenu-master'
-Plug '~/.vim/plugged/asyncrun.vim-master'
-Plug '~/.vim/plugged/vim-preview-master'
-Plug '~/.fzf/'
-Plug '~/.vim/plugged/fzf.vim-master'
+Plug 'vim-airline/vim-airline'
+Plug 'instant-markdown/vim-instant-markdown'
+Plug 'preservim/nerdtree'
+Plug 'jiangmiao/auto-pairs'
+Plug 'airblade/vim-gitgutter'
+Plug 'skywind3000/vim-dict'
+Plug 'skywind3000/vim-auto-popmenu'
+Plug 'skywind3000/asyncrun.vim'
+Plug 'skywind3000/vim-preview'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
 call plug#end()
 
 " Settings for vim-gitgutter
