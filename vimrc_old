@@ -1,0 +1,97 @@
+source $VIMRUNTIME/vimrc_example.vim
+
+if has('gui_win32')
+  set guifont=Consolas:h12 " for windows
+else
+  "set guifont=Monospace\ 12 " for linux
+  set guifont=Monaco:h16 " for macos
+endif
+
+" not need to be set in macos
+"set encoding=utf-8
+"set fileencodings=utf-8,chinese,latin-1
+"if has("win32")
+"  set fileencoding=chinese
+"else
+"  set fileencoding=utf-8
+"endif
+"source $VIMRUNTIME/delmenu.vim
+"source $VIMRUNTIME/menu.vim
+"language messages zh_CN.utf-8
+
+set nobackup
+set noundofile
+set noswapfile
+set autoread
+
+set number
+set cursorline
+set ruler
+
+syntax on
+"colorscheme koehler
+colorscheme torte
+"colorscheme retrobox
+"set background=dark
+
+set cindent
+set expandtab
+set tabstop=2
+set shiftwidth=2
+set backspace=2
+
+"set go=
+"set guioptions-=m
+set guioptions-=T
+
+" replaced by auto-pairs
+"inoremap ( ()<ESC>i
+"inoremap [ []<ESC>i
+""inoremap { {}<ESC>i
+"inoremap < <><ESC>i
+""inoremap " ""<ESC>i
+""inoremap ' ''<ESC>i
+"
+""inoremap { {<CR>}<Esc>kA<CR>
+"func! HandleCR()
+"  let c = col('.') - 1
+"  let l = getline('.')
+"  if c > 0 && l[c] == '}' && l[c - 1] == '{'
+"    return "\r\ekA\r"
+"  else
+"    return "\r"
+"  endif
+"endfunc
+"inoremap <expr><CR> HandleCR()
+
+call plug#begin()
+
+Plug 'skywind3000/vim-auto-popmenu'
+
+" enable this plugin for filetypes, '*' for all files.
+let g:apc_enable_ft = {'text':1, 'markdown':1, 'php':1}
+
+" source for dictionary, current or other loaded buffers, see ':help cpt'
+set cpt=.,k,w,b
+
+" don't select the first item.
+set completeopt=menu,menuone,noselect
+
+" suppress annoy messages.
+set shortmess+=c
+
+Plug 'skywind3000/vim-dict'
+
+Plug 'jiangmiao/auto-pairs'
+
+Plug 'preservim/nerdtree'
+
+Plug 'airblade/vim-gitgutter'
+
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+
+Plug 'junegunn/fzf.vim'
+
+call plug#end()
+
+let g:gitgutter_enabled=0

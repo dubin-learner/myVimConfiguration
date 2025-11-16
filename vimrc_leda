@@ -1,0 +1,188 @@
+"source $VIMRUNTIME/vimrc_example.vim
+"if has('gui_win32')
+"  set guifont=Consolas:h14
+"else
+"  set guifont=Monospace\ 12
+""  set guifont=Monaco:h12 --- for MacOS
+"endif
+
+"set encoding=utf-8
+"set fileencodings=utf-8,chinese,latin-1
+"if has('win32')
+"  set fileencoding=chinese
+"else
+"  set fileencoding=utf-8
+"endif
+"source $VIMRUNTIME/delmenu.vim
+"source $VIMRUNTIME/menu.vim
+"language messages zh_CN.utf-8
+
+set nobackup
+set noundofile
+set noswapfile
+"set nowritebackup
+set autoread
+
+set number
+set ruler
+set cursorline
+highlight CursorLine cterm=NONE ctermbg=238
+"set cursorcolumn
+set hlsearch
+highlight Search cterm=NONE ctermfg=0 ctermbg=220
+
+colorscheme torte
+"colorscheme monokai
+"colorscheme duoduo 
+"colorscheme janah
+set background=dark
+
+syntax on
+set cindent
+set expandtab
+set wrap
+autocmd FileType cpp,cc setlocal cindent expandtab smarttab
+autocmd FileType python setlocal smartindent expandtab
+
+set tabstop=2
+set softtabstop=2
+set shiftwidth=2
+set backspace=2
+
+"set go=
+"set guioptions-=m
+set guioptions-=T
+"set mouse=a
+"set mouse=c
+"set ttymouse=xterm2
+
+"inoremap ( ()<ESC>i
+"inoremap [ []<ESC>i
+"inoremap { {}<ESC>i
+""inoremap < <><ESC>i
+"inoremap " ""<ESC>i
+"inoremap ' ''<ESC>i
+
+"inoremap { {<CR>}<Esc>kA<CR>
+func! HandleCR()
+  let c = col('.') - 1
+  let l = getline('.')
+  if c > 0 && l[c] == '}' && l[c - 1] == '{'
+    return "\r\ekA\r"
+  else
+    return "\r"
+  endif
+endfunc
+"inoremap <expr><CR> HandleCR()
+
+source ~/.vim/apc.vim
+set cpt=.,k,b
+set completeopt=menu,menuone,noselect
+let g:apc_enable_ft = {'text':1, 'markdown':1, 'php':1}
+let g:apc_flag = 0
+function! ToggleApcFlag()
+  if g:apc_flag = 0
+    ApcEnable
+    let g:apc_flag = 1
+    echom 'Apc Enable!'
+  else
+    ApcDisable
+    let g:apc_flag = 0
+    echom 'Apc Disable!'
+  endif
+endfunction
+noremap <F2> : call ToggleApcFlag()<CR>
+
+noremap <F5> : call CompileProjectDebug()<CR>
+noremap <C-F5> : call CompileProject()<CR>
+function! CompileProjectDebug()
+  if filereadable('configure')
+    execute 'wa'
+    execute '!./configure debug 50'
+  endif
+endfunction
+function! CompileProject()
+  if filereadable('configure')
+    execute 'wa'
+    execute '!./configure 50'
+  endif
+endfunction
+
+function! UpdateTags()
+  let ctags_cmd = '!ctags -R --languages=c++ --c++-kinds=+px '.
+        \ '--field=+aiKSz --extra=+q -h +.hh --exclude=*.py --exclude=*.tcl '.
+        \ '--exclude=include/* --exclude=src/opt/test/*'
+  execute ctags_cmd
+endfunction
+map <c-]> g<c-]>
+
+function! FormatCurrentFile()
+  let clang_format = '/data/xshare/env/bin/clang-format'
+  "echom &filetype
+  if &filetype != 'cpp'
+    echom 'Not a cpp file, skip format!'
+  elseif filereadable(clang_format)
+    " save file before do format
+    if getbufvar('%', '&modified') != 0
+      execute 'w'
+    endif
+    let current_file_name = expand('%:p')
+    "echom current_file_name
+    let format_file_cmd = clang_format.' -i '.current_file_name
+    call system(format_file_cmd)
+    echom format_file_cmd
+    execute 'e'
+  endif
+endfunction
+noremap <S-F> : call FormatCurrentFile()<CR>
+
+let g:netrw_banner=1
+let g:netrw_liststyle=3
+let g:netrw_browse_split=4
+let g:netrw_altv=1
+let g:netrw_winsize=16
+
+let g:gitgutter_enabled=0
+let g:gitgutter_highlight_lines=1
+noremap <F3> : GitGutterToggle<CR>
+
+tnoremap <C-v> <C-\><C-n>
+
+function! InsertCommentBlock()
+  let i = line('.') - 1
+  call append(i + 0, '/**')
+  call append(i + 1, ' * @author dubin')
+  call append(i + 2, ' * @brief')
+  call append(i + 3, ' * @note')
+  call append(i + 4, ' * @param')
+  call append(i + 5, ' * @return')
+  call append(i + 6, ' */')
+  normal! 05k$
+endfunction
+noremap <S-M> : call InsertCommentBlock()<CR>
+
+noremap <F4> : NERDTreeToggle<CR>
+
+function! VimGrep(pattern, folder)
+  execute 'vimgrep /\<'.a:pattern.'\>/gj'.a:folder.'/**'
+  copen
+endfunction
+command! -nargs=+ FindStr call VimGrep(<f-args>)
+
+function! CpplintCurrentFile()
+  let cpplint_py = '/data/xshare/qa/daily_share_package/tools/cpplint/cpplint.py'
+  let cpplint_yl = '/data/xshare/qa/daily_share_package/tools/cpplint/cpplint.yaml'
+  let param1 = ' --rules '
+  let param2 = ' --output leda --linelength 150 '
+  "echom &filetype
+  if &filetype != 'cpp'
+    echom 'Not a cpp file, skip cpplint!'
+  elseif filereadable(cpplint_py) && filereadable(cpplint_yl)
+    " save file before format
+    if getbufvar('%', '&modified') != 0
+      execute 'w'
+    endif
+    let current_file_name = expand('%:p')
+    let cpplint_cmd = 'python'.cpplint_py.param1.cpplint_yl.param2.current_file_name
+  endif
+endfunction
