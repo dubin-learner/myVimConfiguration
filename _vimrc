@@ -72,11 +72,13 @@ highlight CursorLine cterm=NONE ctermbg=240
 
 " Function for update tags by ctags, find definition/declaration in C++ files
 function! UpdateTags()
+  let update_tags_cmd = "ctags -R --verbose"
   if filereadable('./tags')
-    execute "!ctags -R --verbose"
   else
-    execute "!ctags -R --c++-kinds=+px --fields=+iaS --extra=+q --verbose"
+    execute update_tags_cmd = "ctags -R --c++-kinds=+px --fields=+iaS --extra=+q --verbose"
   endif
+  copen
+  call asyncrun#run("", "", update_tags_cmd)
 endfunction
 command UpdateTags call UpdateTags()
 map <c-]> g<c-]>
@@ -111,3 +113,20 @@ noremap <F6> :cnext<CR>
 if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
 endif
+
+" Set tags command of fzf.vim (same as previous update tags command)
+let g:fzf_vim = {}
+let g:fzf_vim.tags_command = 'ctags -R --c++-kinds=+px --fields=+iaS --extra=+q --verbose'
+let g:fzf_ag_prg = '~/tools/installs/bin/ag'
+" Fix preview error in csh when '!' in current line
+if &shell =~# 'csh'
+  let s:preview_command = 'bat --color=always --style=numbers --line-ranges=:500 {}'
+  let $FZF_DEFAULT_OPTS = '--preview=' . shellescape('sh -c ' . shellescape(s:preview_command))
+
+  if executable('bash')
+    let $SHELL = 'bash'
+  endif
+endif
+
+" Maximize current window width/height, use <C-w>= to restore
+command! Focus execute "normal! \<C-w>_\<C-w>|"
