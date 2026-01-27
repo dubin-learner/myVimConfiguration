@@ -1,7 +1,6 @@
 " Set Vim color scheme
 set guifont=Monospace\ 13.6
-colorscheme duoduo "set duduo first to support vim-airline style ???
-"colorscheme desert
+colorscheme duoduo
 
 " Set cursor and text format related style
 set number
@@ -30,6 +29,7 @@ set autoread
 "Plug '~/.vim/plugged/auto-pairs-master'
 "Plug '~/.vim/plugged/vim-gitgutter-main'
 "Plug '~/.vim/plugged/vim-auto-popmenu-master'
+"Plug '~/.vim/plugged/vim-dict-master'
 "Plug '~/.vim/plugged/asyncrun.vim-master'
 "Plug '~/.vim/plugged/vim-preview-master'
 "Plug '~/.fzf/'
@@ -96,6 +96,32 @@ function! CompileProject()
 endfunction
 command CompileProject call CompileProject()    
 
+" Function for build project
+function! Build(...)
+  let build_py = "./build.py"
+  if filereadable(build_py)
+    let build_cmd = "./build.py -s -i -o output.log"
+    let alert_cmd = "tmux display-popup printf 'Project " . getcwd() . " build finished.'"
+    if a:0 > 0
+      let build_type = a:1
+      if build_type == "debug" || build_type == "Debug"
+        let build_cmd = build_cmd . " -t Debug"
+      elseif build_type == "memcheck" || build_type == "MemCheck"
+        let build_cmd = build_cmd . " -t MemCheck"
+      elseif build_type == "threadcheck" || build_type == "ThreadCheck"
+        let build_cmd = build_cmd . " -t ThreadCheck"
+      endif
+    endif
+    let options = { 'mode': 'async', 'post': 'caddfile output.log' }
+    copen
+    execute "normal! \<C-w>J"
+    call asyncrun#run("", options, build_cmd . ";" . alert_cmd)
+  else
+    echom "Error: file " . build_py . " not exist!"
+  endif
+endfunction
+command! -nargs=? Build call Build(<f-args>)
+
 " Keymap for internal terminal visual mode
 tmap <c-v> <c-\><c-n>
 
@@ -127,6 +153,45 @@ if &shell =~# 'csh'
     let $SHELL = 'bash'
   endif
 endif
+
+" Get git blame information of current line
+function! GitBlame()
+  let filename = expand('%')
+  let line_num = line('.')
+
+  " Check if the file is in a Git repository
+  let git_dir = system('bash -c "git rev-parse --git-dir 2>/dev/null"')
+  if v:shell_error != 0
+    echo "Not in a Git repository"
+    return
+  endif
+
+  let blame_output = system('git blame -L ' . line_num . ',' . line_num . ' -- ' . shellescape(filename))
+
+  " Check if the command executed successfully
+  if v:shell_error != 0
+      echo "Failed to get blame information"
+      return
+  endif
+  
+  let blame_info = split(blame_output, '\n')[0]
+  let parts = matchlist(blame_info, '^\(\x\{8}\) \(.*+\d\{4}\)')
+  if len(parts) <= 2
+    echo "Failed to match blame information"
+    return
+  endif
+
+  let hash_commit = parts[1]
+  let git_log_oneline_output = system('git log -1 ' . hash_commit . ' --oneline')
+  if v:shell_error != 0
+      echo "Failed to get log information"
+      return
+  endif
+
+  let log_info = split(git_log_oneline_output, '\n')[0][7:]
+  echo parts[0] . ')' . log_info
+endfunction
+command! GitBlame call GitBlame()
 
 " Maximize current window width/height, use <C-w>= to restore
 command! Focus execute "normal! \<C-w>_\<C-w>|"
