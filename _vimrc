@@ -69,6 +69,10 @@ set shortmess+=c
 " BugFix: colorscheme duoduo will set popmenu select both fg and bg black
 highlight PMenuSel ctermbg=lightblue
 highlight CursorLine cterm=NONE ctermbg=240
+" Change tab styles
+highlight TabLine ctermfg=240 ctermbg=bg
+highlight TabLineSel ctermfg=fg ctermbg=240
+highlight TabLineFill ctermfg=bg ctermbg=fg
 
 " Function for update tags by ctags, find definition/declaration in C++ files
 function! UpdateTags()
@@ -144,6 +148,10 @@ endif
 let g:fzf_vim = {}
 let g:fzf_vim.tags_command = 'ctags -R --c++-kinds=+px --fields=+iaS --extra=+q --verbose'
 let g:fzf_ag_prg = '~/tools/installs/bin/ag'
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-x': 'split',
+  \ 'ctrl-c': 'vsplit' }
 " Fix preview error in csh when '!' in current line
 if &shell =~# 'csh'
   let s:preview_command = 'bat --color=always --style=numbers --line-ranges=:500 {}'
