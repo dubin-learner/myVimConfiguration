@@ -69,10 +69,6 @@ set shortmess+=c
 " BugFix: colorscheme duoduo will set popmenu select both fg and bg black
 highlight PMenuSel ctermbg=lightblue
 highlight CursorLine cterm=NONE ctermbg=240
-" Change tab styles
-highlight TabLine ctermfg=240 ctermbg=bg
-highlight TabLineSel ctermfg=fg ctermbg=240
-highlight TabLineFill ctermfg=bg ctermbg=fg
 
 " Function for update tags by ctags, find definition/declaration in C++ files
 function! UpdateTags()
@@ -203,3 +199,40 @@ command! GitBlame call GitBlame()
 
 " Maximize current window width/height, use <C-w>= to restore
 command! Focus execute "normal! \<C-w>_\<C-w>|"
+
+" Change tab styles
+highlight TabLine ctermfg=240 ctermbg=bg
+highlight TabLineSel ctermfg=fg ctermbg=240
+highlight TabLineFill ctermfg=bg ctermbg=fg
+highlight TabLineTable ctermfg=bg ctermbg=darkgreen
+" Display tab ids, modified flag and filename
+function! MyTabLine()
+  let s = '%#TabLineTable#' . ' tabs '
+  for i in range(tabpagenr('$'))
+    " tab ids from 1 to N
+    let tabnr = i + 1
+    let winnr = tabpagewinnr(tabnr)
+    let buflist = tabpagebuflist(tabnr)
+    let bufnr = buflist[winnr - 1]
+    let bufname = bufname(bufnr)
+    let modified_flag = getbufvar(bufnr, '&modified') ? ' [+]' : ''
+    let filetype = getbufvar(bufnr, '&filetype')
+    let filename = fnamemodify(bufname, ':t')
+    if filetype == 'qf'
+      let filename = '[Quickfix]'
+    elseif filetype == 'help'
+      let filename = '[Help]'
+    elseif filename == ''
+      let filename = '[No Name]'
+    endif
+    if tabnr == tabpagenr()
+      let s .= '%#TabLineSel#'
+    else
+      let s .= '%#TabLine#'
+    endif
+    let s .= ' ' . tabnr . ':'. modified_flag . filename . ' '
+  endfor
+  let s .= '%#TabLineFill#'
+  return s
+endfunction
+set tabline=%!MyTabLine()
