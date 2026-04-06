@@ -1,6 +1,23 @@
 " Set Vim color scheme
 set guifont=Monospace\ 13.6
 colorscheme duoduo
+let g:airline_theme='ayu_dark'
+
+" Set colorscheme for dark/light mode in MacOS
+if has('mac') || has('macunix')
+  silent let s:is_dark = system("defaults read -g AppleInterfaceStyle 2>/dev/null")
+  let g:is_night_mode = (v:shell_error == 0)
+else
+  let g:is_night_mode = 1
+endif
+
+if g:is_night_mode
+  colorscheme duoduo
+  let g:airline_theme='ayu_dark'
+else
+  colorscheme shine
+  let g:airline_theme='ayu_light'
+endif
 
 " Set cursor and text format related style
 set number
@@ -39,6 +56,7 @@ set autoread
 " Use Vim-plug to manage plugins (online)
 call plug#begin('~/.vim/plugged')
 Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 Plug 'instant-markdown/vim-instant-markdown'
 Plug 'preservim/nerdtree'
 Plug 'jiangmiao/auto-pairs'
@@ -67,8 +85,10 @@ set completeopt=menu,menuone,noselect
 set shortmess+=c
 
 " BugFix: colorscheme duoduo will set popmenu select both fg and bg black
-highlight PMenuSel ctermbg=lightblue
-highlight CursorLine cterm=NONE ctermbg=240
+if g:is_night_mode
+  highlight PMenuSel ctermbg=lightblue
+  highlight CursorLine cterm=NONE ctermbg=240
+endif
 
 " Function for update tags by ctags, find definition/declaration in C++ files
 function! UpdateTags()
@@ -158,45 +178,6 @@ if &shell =~# 'csh'
   endif
 endif
 
-" Get git blame information of current line
-function! GitBlame()
-  let filename = expand('%')
-  let line_num = line('.')
-
-  " Check if the file is in a Git repository
-  let git_dir = system('bash -c "git rev-parse --git-dir 2>/dev/null"')
-  if v:shell_error != 0
-    echo "Not in a Git repository"
-    return
-  endif
-
-  let blame_output = system('git blame -L ' . line_num . ',' . line_num . ' -- ' . shellescape(filename))
-
-  " Check if the command executed successfully
-  if v:shell_error != 0
-      echo "Failed to get blame information"
-      return
-  endif
-  
-  let blame_info = split(blame_output, '\n')[0]
-  let parts = matchlist(blame_info, '^\(\x\{8}\) \(.*+\d\{4}\)')
-  if len(parts) <= 2
-    echo "Failed to match blame information"
-    return
-  endif
-
-  let hash_commit = parts[1]
-  let git_log_oneline_output = system('git log -1 ' . hash_commit . ' --oneline')
-  if v:shell_error != 0
-      echo "Failed to get log information"
-      return
-  endif
-
-  let log_info = split(git_log_oneline_output, '\n')[0][7:]
-  echo parts[0] . ')' . log_info
-endfunction
-command! GitBlame call GitBlame()
-
 " Maximize current window width/height, use <C-w>= to restore
 command! Focus execute "normal! \<C-w>_\<C-w>|"
 
@@ -205,6 +186,7 @@ highlight TabLine ctermfg=240 ctermbg=bg
 highlight TabLineSel ctermfg=fg ctermbg=240
 highlight TabLineFill ctermfg=bg ctermbg=fg
 highlight TabLineTable ctermfg=bg ctermbg=darkgreen
+
 " Display tab ids, modified flag and filename
 function! MyTabLine()
   let s = '%#TabLineTable#' . ' tabs '
@@ -222,6 +204,8 @@ function! MyTabLine()
       let filename = '[Quickfix]'
     elseif filetype == 'help'
       let filename = '[Help]'
+    elseif filetype == 'gitblame'
+      let filename = '[GitBlame]'
     elseif filename == ''
       let filename = '[No Name]'
     endif
@@ -236,3 +220,108 @@ function! MyTabLine()
   return s
 endfunction
 set tabline=%!MyTabLine()
+
+" Auto set light/dark colorscheme following system light/dark mode
+function! SetThemeBySystemAppearance()
+  silent let s:is_dark = system("defaults read -g AppleInterfaceStyle 2>/dev/null")
+  if v:shell_error == 0
+    colorscheme duoduo
+    highlight PMenuSel ctermbg=lightblue
+    highlight CursorLine cterm=NONE ctermbg=240
+    let g:airline_theme='ayu_dark'
+  else
+    colorscheme shine
+    let g:airline_theme='ayu_light'
+  endif
+endfunction
+if has('mac') || has('macunix')
+  autocmd BufRead,BufNewFile * call SetThemeBySystemAppearance()
+endif
+autocmd VimEnter * AirlineRefresh
+
+function! GitBlame()
+    " 检查当前文件是否在 Git 仓库中
+    if !filereadable('.git/config') && !findfile('.git', '.;') != ''
+        echo "Not in a git repository"
+        return
+    endif
+    
+    " 获取当前文件的一些信息
+    let current_file = expand('%:p')
+    let current_linenum = line('.')
+    let current_filename = expand('%:t')
+    
+    " 创建临时文件名（用于存储 blame 结果）
+    let temp_file = tempname()
+    
+    " 执行 git blame，使用人性化格式
+    " -w: 忽略空白字符变更
+    " --date=short: 显示短日期格式
+    " --pretty: 显示作者和时间
+    execute "silent !git blame -w --date=short --pretty=format:\"%h %an %ad %s\" " . shellescape(current_file) . " > " . temp_file
+    
+    " 检查命令是否执行成功
+    if v:shell_error != 0
+        call delete(temp_file)
+        echo "Git blame failed"
+        return
+    endif
+    
+    " 设置窗口属性
+    tabnew
+    setlocal buftype=nofile      " 不与文件关联
+    setlocal bufhidden=hide      " 隐藏时不删除
+    setlocal noswapfile          " 不使用交换文件
+    
+    " 读取 blame 结果
+    execute "read " . temp_file
+    
+    " 删除第一行（空行）
+    normal! ggdd
+
+    " 跳转到指定行并居中显示
+    execute "normal! " . current_linenum . "G"
+    normal! zz
+    
+    " 删除临时文件
+    call delete(temp_file)
+
+    " 在删除第一行后设置不可修改，否则报错
+    setlocal readonly            " 只读模式
+    setlocal nomodifiable        " 不可修改
+    
+    " 设置文件类型为 git blame（可选语法高亮）
+    setfiletype gitblame
+    
+    " 设置窗口标题
+    execute "setlocal statusline=Git\\ Blame:\\ " . current_filename
+    
+    " 添加语法高亮（可选）
+    if !exists("g:loaded_gitblame_syntax")
+        syntax match GitBlameHash   '^\x\+' 
+        syntax match GitBlameAuthor '\x\+\s\+\zs[^(]*\ze\s\+('
+        syntax match GitBlameDate   '(\zs\d\{4}-\d\{2}-\d\{2\}\ze\s'
+        syntax match GitBlameCommit '[^)]*)$'
+        
+        highlight default link GitBlameHash   Identifier
+        highlight default link GitBlameAuthor Function
+        highlight default link GitBlameDate    Comment
+        highlight default link GitBlameCommit  String
+        
+        let g:loaded_gitblame_syntax = 1
+    endif
+    
+    echo "Git blame loaded in read-only buffer"
+    redraw
+endfunction
+command! GitBlame call GitBlame()
+
+" 辅助函数：查看具体提交，只能在GitBlame的窗口中使用
+function! ViewCommit()
+  let current_line = getline('.')
+  let commit_hash = matchstr(current_line, '^\x\+')
+  let commit_info = system('git show --stat ' . commit_hash)
+  let lines = split(commit_info, '\n')
+  call popup_create(lines, #{title: "Commit: " . commit_hash, border: [], padding: [1,1,1,1]})
+endfunction
+command! ViewCommit call ViewCommit()
