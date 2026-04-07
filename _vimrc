@@ -76,7 +76,7 @@ let g:gitgutter_sign_added='+'
 
 " Settings for vim-auto-popmenu
 " 1. enable this plugin for filetypes, '*' for all files
-let g:apc_enable_ft = {'text':1, 'markdown':1, 'php':1}
+let g:apc_enable_ft = {'text':1, 'markdown':1, 'cpp':1, 'vim':1}
 " 2. source for dictionary, current or other loaded buffers,see ':help cpt'
 set cpt=.,k,w,b
 " 3. don't select the first item.
@@ -95,7 +95,7 @@ function! UpdateTags()
   let update_tags_cmd = "ctags -R --verbose"
   if filereadable('./tags')
   else
-    execute update_tags_cmd = "ctags -R --c++-kinds=+px --fields=+iaS --extra=+q --verbose"
+    let update_tags_cmd = "ctags -R --c++-kinds=+px --fields=+iaS --extra=+q --verbose"
   endif
   copen
   call asyncrun#run("", "", update_tags_cmd)
@@ -106,18 +106,18 @@ noremap <F3> :PreviewTag<CR>
 
 " Funciton for compile
 function! CompileProject()
-  let compile_csh = "./compile.sh"  
+  let compile_csh = "./compile_all.csh"
   if filereadable(compile_csh)
     copen
-    asyncrun#run("","", compile_csh)
+    call asyncrun#run("", "", compile_csh)
   else
-    echom "Error: file ". compile_csh . " not exist!"
+    echom "Error: file " . compile_csh . " not exist!"
   endif
 endfunction
-command CompileProject call CompileProject()    
+command CompileProject call CompileProject()
 
 " Function for build project
-function! Build(...)
+function! Build(is_alert, ...)
   let build_py = "./build.py"
   if filereadable(build_py)
     let build_cmd = "./build.py -s -i -o output.log"
@@ -135,12 +135,16 @@ function! Build(...)
     let options = { 'mode': 'async', 'post': 'caddfile output.log' }
     copen
     execute "normal! \<C-w>J"
-    call asyncrun#run("", options, build_cmd . ";" . alert_cmd)
+    if a:is_alert
+      call asyncrun#run("", options, build_cmd . ";" . alert_cmd)
+    else
+      call asyncrun#run("", options, build_cmd)
   else
     echom "Error: file " . build_py . " not exist!"
   endif
 endfunction
-command! -nargs=? Build call Build(<f-args>)
+command! -nargs=? Build call Build(0, <f-args>)
+command! -nargs=? BuildAlert call Build(1, <f-args>)
 
 " Keymap for internal terminal visual mode
 tmap <c-v> <c-\><c-n>
@@ -149,7 +153,8 @@ tmap <c-v> <c-\><c-n>
 function! AsyncGrep(pattern)
   let grep_cmd = "grep " . a:pattern . " -nwr . --include=\"*.h\" --include=\"*.cpp\""
   copen
-  call asyncrun#run("!","", grep_cmd)
+  execute "normal! \<C-w>J"
+  call asyncrun#run("!", "", grep_cmd)
 endfunction
 command -nargs=1 AsyncGrep call AsyncGrep(<q-args>)
 noremap <F5> :cprev<CR>
@@ -157,7 +162,7 @@ noremap <F6> :cnext<CR>
 
 " Jump to the last position when reopen a file
 if has("autocmd")
-  au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+  au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
 
 " Set tags command of fzf.vim (same as previous update tags command)
@@ -181,7 +186,7 @@ endif
 " Maximize current window width/height, use <C-w>= to restore
 command! Focus execute "normal! \<C-w>_\<C-w>|"
 
-" Change tab styles
+" Change tabline styles
 highlight TabLine ctermfg=240 ctermbg=bg
 highlight TabLineSel ctermfg=fg ctermbg=240
 highlight TabLineFill ctermfg=bg ctermbg=fg
