@@ -330,3 +330,16 @@ function! ViewCommit()
   call popup_create(lines, #{title: "Commit: " . commit_hash, border: [], padding: [1,1,1,1]})
 endfunction
 command! ViewCommit call ViewCommit()
+
+" Support for clang-format.
+set pythonthreedll=~/tools/installs/lib/libpython3.6m.so.1.0
+let g:clang_format_path="/home/builder/LLVMTools/bin/clang-format"
+if has('python')
+  vmap <C-f> :pyf /home/builder/LLVMTools/share/clang/clang-format.py<CR>
+  imap <C-f> <c-o>:pyf /home/builder/LLVMTools/share/clang/clang-format.py<cr>
+elseif has('python3')
+  vmap <C-f> :py3f /home/builder/LLVMTools/share/clang/clang-format.py<CR>
+  imap <C-f> <c-o>:py3f /home/builder/LLVMTools/share/clang/clang-format.py<cr>
+else
+  vmap <C-f> :!/home/builder/LLVMTools/bin/clang-format<cr>
+endif
