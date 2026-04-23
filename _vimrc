@@ -277,6 +277,11 @@ function! GitBlame()
     setlocal buftype=nofile      " 不与文件关联
     setlocal bufhidden=hide      " 隐藏时不删除
     setlocal noswapfile          " 不使用交换文件
+    setlocal nonumber            " 不显示行号
+
+    " disable airline in this tab
+    AirlineToggle
+    let w:airline_disabled = 1
     
     " 读取 blame 结果
     execute "read " . temp_file
@@ -300,22 +305,22 @@ function! GitBlame()
     
     " 设置窗口标题
     execute "setlocal statusline=Git\\ Blame:\\ " . current_filename
-    
-    " 添加语法高亮（可选）
-    if !exists("g:loaded_gitblame_syntax")
-        syntax match GitBlameHash   '^\x\+' 
-        syntax match GitBlameAuthor '\x\+\s\+\zs[^(]*\ze\s\+('
-        syntax match GitBlameDate   '(\zs\d\{4}-\d\{2}-\d\{2\}\ze\s'
-        syntax match GitBlameCommit '[^)]*)$'
-        
-        highlight default link GitBlameHash   Identifier
-        highlight default link GitBlameAuthor Function
-        highlight default link GitBlameDate    Comment
-        highlight default link GitBlameCommit  String
-        
-        let g:loaded_gitblame_syntax = 1
-    endif
-    
+
+    " 添加语法高亮
+    syntax match GitBlameHash /^\x\{8\}/
+    syntax match GitBlameFile /\(\S\+\)\+\/\S\+\.\S\+/
+    syntax match GitBlameDetail /(\S\+\s\+\d\{4\}-\d\{2\}-\d\{2\}\s\+\d\+)/ contains=GitBlameAuthor,GitBlameDate,GitBlameLine
+    syntax match GitBlameAuthor /(\S\+/ contained
+    syntax match GitBlameDate /\d\{4\}-\d\{2\}-\d\{2\}/ contained
+    syntax match GitBlameLine /\d\{1,4\})/ contained
+
+    highlight GitBlameHash ctermfg=cyan guifg=cyan
+    highlight GitBlameFile ctermfg=yellow guifg=yellow
+"    highlight GitBlameDetail ctermfg=magenta guifg=magenta
+    highlight GitBlameAuthor ctermfg=red guifg=red
+    highlight GitBlameDate ctermfg=green guifg=green
+    highlight GitBlameLine ctermfg=magenta guifg=magenta
+
     echo "Git blame loaded in read-only buffer"
     redraw
 endfunction
