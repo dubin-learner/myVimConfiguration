@@ -94,7 +94,6 @@ endif
 function! UpdateTags()
   let update_tags_cmd = "ctags -R --verbose"
   if filereadable('./tags')
-    let update_tags_cmd = "ctags -R --verbose"
   else
     let update_tags_cmd = "ctags -R --c++-kinds=+px --fields=+iaS --extra=+q --verbose"
   endif
