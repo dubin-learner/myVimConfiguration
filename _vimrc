@@ -32,8 +32,8 @@ set shiftwidth=2
 set backspace=2 "set backspace to previous line
 set wrap
 
-set guioptions=-m
-set guioptions=-T
+set guioptions-=m
+set guioptions-=T
 set nobackup
 set noundofile
 set noswapfile
