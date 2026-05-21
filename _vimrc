@@ -242,8 +242,8 @@ function! SetThemeBySystemAppearance()
 endfunction
 if has('mac') || has('macunix')
   autocmd BufRead,BufNewFile * call SetThemeBySystemAppearance()
+  autocmd VimEnter * AirlineRefresh
 endif
-autocmd VimEnter * AirlineRefresh
 
 function! GitBlame()
     " 检查当前文件是否在 Git 仓库中
