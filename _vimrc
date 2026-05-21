@@ -22,7 +22,7 @@ endif
 " Set cursor and text format related style
 set number
 set cursorline
-set ruler
+"set ruler
 set hlsearch
 
 syntax on
@@ -87,7 +87,7 @@ set shortmess+=c
 " BugFix: colorscheme duoduo will set popmenu select both fg and bg black
 if g:is_night_mode
   highlight PMenuSel ctermbg=lightblue
-  highlight CursorLine cterm=NONE ctermbg=240
+  highlight CursorLine cterm=none ctermbg=240
 endif
 
 " Function for update tags by ctags, find definition/declaration in C++ files
@@ -139,6 +139,7 @@ function! Build(is_alert, ...)
       call asyncrun#run("", options, build_cmd . ";" . alert_cmd)
     else
       call asyncrun#run("", options, build_cmd)
+    endif
   else
     echom "Error: file " . build_py . " not exist!"
   endif
@@ -187,10 +188,10 @@ endif
 command! Focus execute "normal! \<C-w>_\<C-w>|"
 
 " Change tabline styles
-highlight TabLine ctermfg=240 ctermbg=bg
-highlight TabLineSel ctermfg=fg ctermbg=240
-highlight TabLineFill ctermfg=bg ctermbg=fg
-highlight TabLineTable ctermfg=bg ctermbg=darkgreen
+highlight TabLine      ctermfg=240 ctermbg=bg
+highlight TabLineSel   ctermfg=fg  ctermbg=240
+highlight TabLineFill  ctermfg=bg  ctermbg=fg
+highlight TabLineTable ctermfg=bg  ctermbg=darkgreen
 
 " Display tab ids, modified flag and filename
 function! MyTabLine()
@@ -232,7 +233,7 @@ function! SetThemeBySystemAppearance()
   if v:shell_error == 0
     colorscheme duoduo
     highlight PMenuSel ctermbg=lightblue
-    highlight CursorLine cterm=NONE ctermbg=240
+    highlight CursorLine cterm=none ctermbg=240
     let g:airline_theme='ayu_dark'
   else
     colorscheme shine
@@ -278,9 +279,9 @@ function! GitBlame()
     setlocal bufhidden=hide      " 隐藏时不删除
     setlocal noswapfile          " 不使用交换文件
     setlocal nonumber            " 不显示行号
+    setlocal nocursorline        " will enable cursorline after redraw
 
     " disable airline in this tab
-    AirlineToggle
     let w:airline_disabled = 1
     
     " 读取 blame 结果
@@ -307,44 +308,67 @@ function! GitBlame()
     execute "setlocal statusline=Git\\ Blame:\\ " . current_filename
 
     " 添加语法高亮
-    syntax match GitBlameHash /^\x\{8\}/
-    syntax match GitBlameFile /\(\S\+\)\+\/\S\+\.\S\+/
+    syntax match GitBlameHash   /^\x\{8\}/
+    syntax match GitBlameFile   /\(\S\+\)\+\/\S\+\.\S\+/
     syntax match GitBlameDetail /(\S\+\s\+\d\{4\}-\d\{2\}-\d\{2\}\s\+\d\+)/ contains=GitBlameAuthor,GitBlameDate,GitBlameLine
     syntax match GitBlameAuthor /(\S\+/ contained
-    syntax match GitBlameDate /\d\{4\}-\d\{2\}-\d\{2\}/ contained
-    syntax match GitBlameLine /\d\{1,4\})/ contained
+    syntax match GitBlameDate   /\d\{4\}-\d\{2\}-\d\{2\}/ contained
+    syntax match GitBlameLine   /\d\{1,4\})/ contained
 
-    highlight GitBlameHash ctermfg=cyan guifg=cyan
-    highlight GitBlameFile ctermfg=yellow guifg=yellow
-"    highlight GitBlameDetail ctermfg=magenta guifg=magenta
-    highlight GitBlameAuthor ctermfg=red guifg=red
-    highlight GitBlameDate ctermfg=green guifg=green
-    highlight GitBlameLine ctermfg=magenta guifg=magenta
+    highlight GitBlameHash   ctermfg=cyan    guifg=cyan
+    highlight GitBlameFile   ctermfg=yellow  guifg=yellow
+"   highlight GitBlameDetail ctermfg=magenta guifg=magenta
+    highlight GitBlameAuthor ctermfg=red     guifg=red
+    highlight GitBlameDate   ctermfg=green   guifg=green
+    highlight GitBlameLine   ctermfg=magenta guifg=magenta
 
     echo "Git blame loaded in read-only buffer"
     redraw
 endfunction
 command! GitBlame call GitBlame()
 
-" 辅助函数：查看具体提交，只能在GitBlame的窗口中使用
+" View git commit message at current line. Will be easier to get in GitBlame window.
 function! ViewCommit()
-  let current_line = getline('.')
-  let commit_hash = matchstr(current_line, '^\x\+')
+  call popup_clear()
+  if &filetype == 'gitblame'
+    let current_line = getline('.')
+    let commit_hash = matchstr(current_line, '^\x\+')
+  else
+    let current_linenum = line('.')
+    let current_file = expand("%:p")
+    let blame_cmd = 'git blame -L ' . current_linenum . ',' . current_linenum . ' --porcelain ' . shellescape(current_file)
+    let blame_output = system(blame_cmd)
+    let commit_hash = matchstr(blame_output, '^\x\+')
+  endif
   let commit_info = system('git show --stat ' . commit_hash)
   let lines = split(commit_info, '\n')
   call popup_create(lines, #{title: "Commit: " . commit_hash, border: [], padding: [1,1,1,1]})
 endfunction
 command! ViewCommit call ViewCommit()
+command! ViewClose call popup_clear()
 
-" Support for clang-format.
+" Support for clang-format. g:clang_format_path must be set before use python!
 set pythonthreedll=~/tools/installs/lib/libpython3.6m.so.1.0
 let g:clang_format_path="/home/builder/LLVMTools/bin/clang-format"
+let g:clang_format_py="/home/builder/LLVMTools/share/clang/clang-format.py"
 if has('python')
-  vmap <C-f> :pyf /home/builder/LLVMTools/share/clang/clang-format.py<CR>
-  imap <C-f> <c-o>:pyf /home/builder/LLVMTools/share/clang/clang-format.py<cr>
+  vmap <C-f> :pyf <C-r>=g:clang_format_py<CR><CR>
+  imap <C-f> <c-o>:pyf <C-r>=g:clang_format_py<CR><CR>
 elseif has('python3')
-  vmap <C-f> :py3f /home/builder/LLVMTools/share/clang/clang-format.py<CR>
-  imap <C-f> <c-o>:py3f /home/builder/LLVMTools/share/clang/clang-format.py<cr>
+  vmap <C-f> :py3f <C-r>=g:clang_format_py<CR><CR>
+  imap <C-f> <c-o>:py3f <C-r>=g:clang_format_py<CR><CR>
 else
-  vmap <C-f> :!/home/builder/LLVMTools/bin/clang-format<cr>
+  vmap <C-f> :!<C-r>=g:clang_format_path<CR><CR>
 endif
+
+" Make vimdiff colorscheme more gentle.
+if &diff
+  highlight DiffAdd    ctermbg=22  ctermfg=194
+  highlight DiffChange ctermbg=235 ctermfg=254
+  highlight DiffDelete ctermbg=52  ctermfg=181
+  highlight DiffText   ctermbg=26  ctermfg=153 cterm=bold
+  set cursorlineopt=number " no cursorline in diff mode.
+endif
+
+" Override other setting: term=underline
+highlight CursorLine term=none ctermbg=240 guibg=#555555 guisp=#555555
